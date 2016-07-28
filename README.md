@@ -1,6 +1,62 @@
 # nsocket
 Unfinished simple event driven socket library (c++)
 
+_Currently didn't check if it compiles._
+
+This is a small library for using sockets I began to do long time ago (2006). The code was originally hosted on googlecode, after it shutdown I didn't move it until the last moment, so the real history is lost.
+
+The code was going through changes on the API and was called nsocket2 internally, there were no mor changes on this code, but I later began again and made nsocket3, which will upload to github sortly.
+
+The code includes a mini dns query program, which I used for tests. The idea behind the mini dns was to query servers directly as to be asynchronous... I think didn't finish it.
+
+The code includes some comments which seemed interesting at the time, and reading them now, still seems interesting, but unknown if still applies:
+
+```c++
+/****************************************************************************
+* internal_handleEvents
+*
+* Uses select, list of errors select can give in various systems
+* int select(int n, fd_set * read, fd_set *write, fd_set *excep, timeval *tv)
+*
+* Linux:
+*   EBADF       Invalid fd in one of the sets
+* *-EINTR       Signal received (select didn't finish)
+* *-EINVAL      n is negative
+*   ENOMEM      select unable to alocate mem for internal tables
+*
+* Mac OSX:
+*   EBADF       Invalid fd in on of the sets
+* *-EINTR       Signal received (select didn't finish)
+* *-EINVAL      tv is invalid (negative value)
+*
+* Windows:
+*   WSANOTINITIALISED   winsock is not initialised
+*   WSAEFAUL        unable to allocate resources, or bad pointers
+*   WSAENETDOWN     the network subsystem has failed
+* *-WSAEINTR        cancelled by WSACancelBlockingCall (like signal received)
+* *-WSAEINVAL       tv not valid or the 3 fd_sets are NULL
+*   WSAEINPROGRESS  other call in progress, or service provider in callback
+*   WSAENOTSOCK     one of the fd_sets contains an entry that is not a socket
+*
+* Notes
+*
+* fd_sets may change, always reinit them
+* tv may change or not (system depend) always reinit it
+*
+* Linux and Mac OSX:
+*   n = highest_numbered_descriptor + 1;
+*   returns:
+*       0 - if nothing changed
+*       -1 - if error
+*       int - num descriptor changed
+*
+* Windows:
+*   the 3 fd_sets cant be null
+*
+****************************************************************************/
+```
+
+There is also some code that seems smart at that time but it isn't so now, for example, in Windows, winsock was initialized on a global static variable, which can cause a problem on some projects due to the "static initialization order is undefined"...
 
 ## History before first commit on googlecode
 _copied from googlecode archive_
