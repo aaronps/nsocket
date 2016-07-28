@@ -5,7 +5,18 @@
         <data xmlns="http://www.netbeans.org/ns/make-project/1">
             <name>nsocket</name>
             <make-project-type>0</make-project-type>
+            <c-extensions/>
+            <cpp-extensions>cpp</cpp-extensions>
+            <header-extensions>h</header-extensions>
+            <sourceEncoding>UTF-8</sourceEncoding>
             <make-dep-projects/>
+            <sourceRootList>
+                <sourceRootElem>src</sourceRootElem>
+            </sourceRootList>
+            <confList>
+                <confElem>Debug</confElem>
+                <confElem>Release</confElem>
+            </confList>
         </data>
     </configuration>
 </project>
