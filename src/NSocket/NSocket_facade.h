@@ -53,7 +53,7 @@
   typedef int SOCKET;
 #endif
 
-#include "NTimer.h"
+//#include "NTimer.h"
 
 // XXX EABDF == invalid descriptor NOT IN WINDOWS
 // XXX EINVAL == invalid argument NOT IN MAC OSX

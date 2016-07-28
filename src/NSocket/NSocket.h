@@ -1,19 +1,17 @@
 #ifndef _NSOCKET_H_
 #define _NSOCKET_H_
 
-#include <string.h>
-#include <stdio.h>
-#include <list>
-
 #include "NSocket_facade.h"
 
-using namespace std;
+//using namespace std;
 
 class NSocket;
+//struct NSocket;
 
 class NSocketListener
 {
-protected:
+private:
+    friend class NSocket;
     virtual void onSocketReady( NSocket * so) = 0;
     virtual void onDisconected( NSocket * so) = 0;
     virtual void onSocketError( NSocket * so) = 0;
@@ -21,19 +19,21 @@ protected:
     virtual void onNewConnection (NSocket * so, const char * ipaddress, const char * port){};
 };
 
-typedef enum { TCP, UDP, LISTEN_TCP, LISTEN_UDP } SOCKET_TYPE;
+// These are flags
+// if ! TCP then it is UDP, think.
+typedef enum { TCP = 1, LISTEN = 2 } SOCKET_FLAGS;
 
-class NSocket
+class NSocketX
 {
 public:
-	NSocket( NSocketListener *lis );
-	~NSocket();
+    NSocket( NSocketListener *lis );
+    ~NSocket();
 
     inline const char * getIP()
     {
         return (const char *)&ipaddress;
     }
-	
+    
     inline const char * getPort()
     {
         return (const char *)&port;
@@ -52,122 +52,72 @@ public:
     void connectUDP (const char * to_host, const char * to_port);
     void listenUDP(const char * listip, const char * lisport);
 
+    
 protected:
 
-	int sysSend(const char *b, unsigned int s, const struct sockaddr_storage *to_ssaddr=0, int tolen=0);
-	void disconnect();
-	void setTimeOut(unsigned long to)
-	{
-	    write_timeout.setTimeOut(to);
-	    read_timeout.setTimeOut(to);
-	}
+    int sysSend(const char *b, unsigned int s, const struct sockaddr_storage *to_ssaddr=0, int tolen=0);
+    void disconnect();
 
-	int get_socknum() { return socknum; };
 
+    
 private:
     friend class NSocketManager;
-	int socknum;
-	SOCKET fd;
-	struct sockaddr_storage ssaddr;
 
-	char ipaddress[NI_MAXHOST];
-	char port[NI_MAXSERV];
+    
+    NSocketListener *listener;
 
-	char recvbuffer[NSBUFLEN];
+    void notifyError() {}
+    
+    SOCKET fd;
+    struct sockaddr_storage ssaddr;
 
-	bool has_socket;
-	bool is_connecting;
-	bool wantstowrite;
-	bool wantstoexcept;
+    char ipaddress[NI_MAXHOST];
+    char port[NI_MAXSERV];
 
-	SOCKET_TYPE socket_type;
+    char recvbuffer[NSBUFLEN];
 
-	struct sockaddr_storage *from_ssaddr;
-	socklen_t fromlen;
+    bool has_socket;
+    bool is_connecting;
+    bool wantstowrite;
+    bool wantstoexcept;
 
-	int sys_result;
-	int error;
+    SOCKET_FLAGS socket_type;
 
-	NTimeOut read_timeout;
-	NTimeOut write_timeout;
+    struct sockaddr_storage *from_ssaddr;
+    socklen_t fromlen;
 
-	virtual bool onDataReceived(const char * data, const int datalen);
-	virtual void onDataSent() {};
-	virtual void onSocketReady() = 0;
-	virtual NSocket * onNewConnection(const char * new_ipaddres, const char * new_port);
-	virtual void onReceiveTimeOut();
-	virtual void onSendTimeOut();
-	virtual void onConnectTimeOut();
+    int sys_result;
+    int error;
 
-	void onAbleToWrite() {};
-	virtual void onDisconnected();
+    virtual bool onDataReceived(const char * data, const int datalen);
+    virtual void onDataSent() {};
+    virtual void onSocketReady() {};
+    virtual NSocket * onNewConnection(const char * new_ipaddres, const char * new_port);
+    virtual void onReceiveTimeOut();
+    virtual void onSendTimeOut();
+    virtual void onConnectTimeOut();
 
-	void sysAccept();
+    void onAbleToWrite() {};
+    virtual void onDisconnected();
 
-	void sysClose();
+    void sysAccept();
 
-	bool sysRecv();
+    void sysClose();
 
-	bool setNonBlock();
+    bool sysRecv();
 
-	bool setReuseAddr();
+    bool setNonBlock();
+
+    bool setReuseAddr();
 
 
-	void sysResolve(const char *hostname, const char *p, SOCKET_TYPE stype);
+    void sysResolve(const char *hostname, const char *p, SOCKET_FLAGS stype);
 
     NSocket(const NSocket &n);
     NSocket& operator=(const NSocket &n);
 
     void sockaddr_to_ip(const sockaddr_storage * ss, const int sslen, char *ip, char *po);
 
-
-};
-
-class NSocketManager
-{
-public:
-    static void add_to_list(NSocket * n)
-	{
-        _so_to_add.push_front(n);
-	}
-
-	static void remove_from_list(NSocket * n)
-	{
-        _so_to_remove.push_front(n);
-	}
-
-    static void NSocket_mainloop()
-	{
-        handleEvents(1000);
-        while (!_solist.empty())
-            handleEvents(1000);
-        if ( _solist.empty() ) {
-            printf("solist is empty\n");
-        }
-	}
-
-	static void handleEvents()
-    {
-        internal_handleEvents(NULL);
-    }
-
-	static void handleEvents(unsigned int utimeout)
-	{
-		struct timeval tv;
-		tv.tv_sec=0;
-		tv.tv_usec=utimeout;
-		internal_handleEvents(&tv);
-	}
-
-private:
-    static void internal_handleEvents(struct timeval *timeout);
-    static void prepareSocketList();    
-    static void checkTimeouts();
-
-    static std::list<NSocket *> _solist;
-    // Next two lists to avoid add/remove when in loop
-    static std::list<NSocket *> _so_to_add;
-    static std::list<NSocket *> _so_to_remove;
 
 };
 

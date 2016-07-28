@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <string.h>
-#include "NSocket.h"
+#include "NSocket/NSocket.h"
+#include "NSocket/NSocketManager.hpp"
 //#include <stdint.h>
+#include <time.h>
 
 #define QBUFLEN 512
 #define DNSPACKETLEN 512
@@ -26,8 +28,10 @@ public:
         const char * pn = name;
         unsigned char * pqdata = (unsigned char *)&qdata;
         unsigned char * pcount = (unsigned char *)&qdata;
-        id = NTimer::getMiliseconds()&0xffff;
+        //id = NTimer::getMiliseconds()&0xffff;
 
+	id = time(0) & 0xffff;
+	    
         pqdata++;
         *pcount=0;
         while (*pn) {
@@ -90,7 +94,7 @@ typedef enum {
 //    } DNSCLASSTYPE;
 
 
-class DNSRequest : public NSocket
+class DNSRequest : public NSocketListener
 {
 private:
 
@@ -105,7 +109,7 @@ private:
             printf("%02x ", data[n]&0xff);
         printf("\n");
 
-        sysSend(query.getQuery(), query.length());
+        //sysSend(query.getQuery(), query.length());
     };
 
     virtual bool onDataReceived(const char * data, const int datalen)
@@ -122,7 +126,7 @@ private:
         printf("ID = %04x\n", ntohs(*((unsigned int *)pdata)));
         pdata+=2;
         printf("QR = %s\n", (*pdata&0x80)?"Response":"Query");
-        char * opcode;
+        const char * opcode;
         switch ((*pdata>>3)&0x0f) {
             case 0:
                 opcode="QUERY";
@@ -142,7 +146,7 @@ private:
         printf("RD = %s\n", (*pdata&0x01)?"DESIRED":"NON DESIRED");
         pdata++;
         printf("RA = %s\n", (*pdata&0x80)?"AVAILABLE":"NON AVAILABLE");
-        char * rcode;
+        const char * rcode;
         switch (*pdata&0x0f) {
             case 0:
                 rcode="OK";
@@ -339,15 +343,21 @@ private:
         return "UNKNOWN";
     }
 
+    virtual void onSocketReady( NSocket * so) {};
+    virtual void onDisconected( NSocket * so) {};
+    virtual void onSocketError( NSocket * so) {};
+    virtual void onDataReceived( NSocket * so, const char * data, const int datalen){};
+    virtual void onNewConnection (NSocket * so, const char * ipaddress, const char * port){};
+
 
 public:
     DNSRequest(const char * name) : query(name)
     {
         printf("DNSRequest(\"%s\")\n",name);
-        setTimeOut(10000);
+//        setTimeOut(10000);
 //        connectUDP("216.239.32.10","53");
 //        connectUDP("202.99.104.68","53");
-        connectUDP("202.99.96.68","53");
+//        connectUDP("192.168.0.1","53");
 //        connectUDP("86.109.98.97","53");
     };
 
@@ -365,7 +375,7 @@ main (int argc, char **argv)
 #if 1
     DNSRequest dnsreq("google.com");
 
-    NSocket::NSocket_mainloop();
+    NSocketManager::NSocket_mainloop();
 #else
     HKEY regkey;
     LONG result;
